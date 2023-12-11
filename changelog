@@ -1,0 +1,8 @@
+Revision history of DNS-FLOOD.
+Original Here: https://code.google.com/p/dns-flood/
+
+1.0.0 2023-12-11
+    -[bug]
+      修复发送类型类型不对应的问题；
+    -[优化]
+      interval参数由毫秒改为微妙；
