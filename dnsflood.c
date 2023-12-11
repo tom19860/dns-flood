@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -13,6 +14,7 @@
 #include <netinet/udp.h>
 #include <sys/wait.h>
 #include <getopt.h>
+#include <arpa/inet.h>
 
 #define	  CLASS_INET 1
 
@@ -134,7 +136,7 @@ void usage(char *progname)
 			"\t-s, --source-ip\t\tsource ip\n"
 			"\t-p, --dest-port\t\tdestination port\n"
 			"\t-P, --src-port\t\tsource port\n"
-			"\t-i, --interval\t\tinterval (in millisecond) between two packets\n"
+			"\t-i, --interval\t\tinterval (in microsecond) between two packets\n"
 			"\t-n, --number\t\tnumber of DNS requests to send\n"
 			"\t-r, --random\t\tfake random source IP\n"
 			"\t-D, --daemon\t\trun as daemon\n"
@@ -193,17 +195,13 @@ void nameformatIP(char *ip, char *resu)
 
 int make_question_packet(char *data, char *name, int type)
 {
-	if (type == TYPE_A) {
-		nameformat(name, data);
-		*((u_short *) (data + strlen(data) + 1)) = htons(TYPE_A);
-	}
-/* for other type querry
 	if(type == TYPE_PTR){
 		nameformatIP(name,data);
-  	*( (u_short *) (data+strlen(data)+1) ) = htons(TYPE_PTR);
+  		*( (u_short *) (data+strlen(data)+1) ) = htons(type);
+	}else{
+		nameformat(name, data);
+		*((u_short *) (data + strlen(data) + 1)) = htons(type);
 	}
-       
-*/
 
 	*((u_short *) (data + strlen(data) + 3)) = htons(CLASS_INET);
 
@@ -225,7 +223,7 @@ int main(int argc, char **argv)
 	int sock;					/* socket to write on      */
 	int number = 0;
 	int count = 0;
-	int sleep_interval = 0;	/* interval (in millisecond) between two packets */
+	int sleep_interval = 0;	/* interval (in microsecond) between two packets */
 
 	int random_ip = 0;
 	int static_ip = 0;
@@ -274,7 +272,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'i':
-			sleep_interval = atoi(optarg) * 1000;
+			sleep_interval = atoi(optarg);
 			break;
 
 		case 'n':
@@ -397,7 +395,7 @@ int main(int argc, char **argv)
 		}
 
 		dns_header->id = random();
-		dns_datalen = make_question_packet(dns_data, qname, TYPE_A);
+		dns_datalen = make_question_packet(dns_data, qname, qtype);
 
 		udp_datalen = sizeof(struct dnshdr) + dns_datalen;
 		ip_datalen = sizeof(struct udphdr) + udp_datalen;
